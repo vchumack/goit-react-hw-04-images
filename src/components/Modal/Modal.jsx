@@ -2,11 +2,18 @@
 import React, { Component } from 'react';
 import { createPortal } from 'react-dom';
 import { OverlayDiv, ModalDiv } from './Modal.styled';
+import PropTypes from 'prop-types';
 
 const modalRoot = document.querySelector('#modal-root');
 const htmlRef = document.querySelector('html');
 
 export class Modal extends Component {
+
+	static propTypes = {
+		onClose: PropTypes.func.isRequired,
+		img: PropTypes.string.isRequired,
+		alt: PropTypes.string.isRequired,
+	};
 	componentDidMount() {
 		window.addEventListener('keydown', this.closeModalEsc);
 		htmlRef.classList.add('openModal');
@@ -32,6 +39,7 @@ export class Modal extends Component {
 	}
 	render() {
 		const { img, alt } = this.props;
+		// console.log(this.props)
 		return createPortal(
 			<OverlayDiv onClick={this.closeBackdrop}>
 				<ModalDiv >
