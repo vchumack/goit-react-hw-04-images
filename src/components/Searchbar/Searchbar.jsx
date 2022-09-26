@@ -6,11 +6,16 @@ import {
 	SearchFormSpan,
 	SearchFormInput,
 } from './Searchbar.styled';
-// import PropTypes from 'prop-types';
+import PropTypes from 'prop-types';
 
 export class Searchbar extends Component {
 	state = {
 		searchQuery: '',
+	};
+
+	static propTypes = {
+		onSubmit: PropTypes.func.isRequired,
+		
 	};
 
 	// метод для получения значения инпута

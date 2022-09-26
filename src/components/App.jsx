@@ -1,13 +1,12 @@
 import { Component } from 'react';
+import { pixabayApi } from '../API';
 import { Box } from './Box';
-import axios from 'axios';
 import { Searchbar } from './Searchbar';
 import { ImageGallery } from './ImageGallery';
 import { Button } from './Button';
 import { Loader } from './Loader';
 
-const BASE_URL = 'https://pixabay.com/api/';
-const KEY = '?key=29564245-0babaf5e9f754f21fa651fdf5';
+
 const PER_PAGE = 12;
 
 export class App extends Component {
@@ -20,75 +19,83 @@ export class App extends Component {
 		isShowLoader: false,
 	};
 
-	// метод для получения значений формы из Searchbar
-	handleSubmitForm = async searchQuery => {
-		const { page } = this.state;
+	async componentDidUpdate(_, prevState) {
+		const { page, query } = this.state;
 
-		// записывает в текущий стейт query значение из инпута для кнопки загрузить еще
-		this.setState({
-			query: searchQuery,
-		});
-
-		try {
-			const getData = await this.getPixabayApi(searchQuery, page);
-			this.setState({ images: getData.hits });
-
-			this.checkEmptyArr(getData);
-			this.setState({ page: 2 });
-
-			if (getData.total > PER_PAGE) {
+		if (prevState.query !== query) {
+			try {
 				this.setState({
-					isShowLoadMore: true,
-				});
-			}
-		} catch (error) {
-			console.log(error);
-			this.setState({
-				errSearch: true,
+				isShowLoader: true,
+				isShowLoadMore: false,
 			});
+				const getData = await pixabayApi(query, page, PER_PAGE);
+				this.setState({
+					images: getData.data.hits,
+				});
+
+				this.checkEmptyArr(getData.data.hits);
+				// this.setState({ page: 2 });
+
+				if (getData.data.total > PER_PAGE) {
+					this.setState({
+						isShowLoadMore: true,
+					});
+				}
+			} catch (error) {
+				console.log(error);
+				this.setState({
+					errSearch: true,
+				});
+			}  finally {
+			this.setState({ isShowLoader: false });
 		}
+		}
+
+		if (prevState.query === query && prevState.page !== page) {
+			try {
+				
+				this.setState({
+				isShowLoader: true,
+				isShowLoadMore: false,
+			});
+				const getData = await pixabayApi(query, page, PER_PAGE);
+
+				this.setState(prevState => ({
+					images: [...prevState.images, ...getData.data.hits],
+				}));
+
+				if (getData.data.total > page * PER_PAGE) {
+					this.setState({ isShowLoadMore: true });
+				}
+			} catch (error) {
+				console.log(error);
+			} finally {
+			this.setState({ isShowLoader: false });
+		}
+		}
+	}
+
+	// метод для получения значений формы из Searchbar
+	handleSubmitForm = searchQuery => {
+		// записывает в текущий стейт query значение из инпута для кнопки загрузить еще
+		this.setState(() => ({
+			query: searchQuery,
+			page: 1,
+		}));
 	};
 
 	// метод для нажатия на кнопку загрузить еще
-	handleLoadMoreBtn = async () => {
-		const { page, query } = this.state;
+	handleLoadMoreBtn = () => {
+		// const { page, query } = this.state;
 
-		try {
-			const getImg = await this.getPixabayApi(query, page);
-
-			this.setState(prevState => ({
-				images: [...prevState.images, ...getImg.hits],
-			}));
-
-			if (getImg.total > this.state.page * PER_PAGE) {
-				this.setState({ isShowLoadMore: true });
-			}
-
-			this.setState(prevState => ({ page: prevState.page + 1 }));
-		} catch (error) {
-			console.log(error);
-		}
+		this.setState(prevState => ({ page: prevState.page + 1 }));
 	};
 
-	//метод для отправок запросов на сервер
-	getPixabayApi = async (searchQuery, page) => {
-		try {
-			this.setState({ isShowLoader: true, isShowLoadMore: false });
-			const getData = await axios.get(
-				`${BASE_URL}${KEY}&q=${searchQuery}&page=${page}&per_page=${PER_PAGE}&image_type=photo&orientation=horizontal`
-			);
-			// console.log(getData.data);
-			return getData.data;
-		} catch (error) {
-			console.log(error);
-		} finally {
-			this.setState({ isShowLoader: false });
-		}
-	};
+	
 
 	//метод для проверки массива, пришедшего из сервера, на пустоту
 	checkEmptyArr = data => {
-		if (data.hits.length < 1) {
+		if (!data.length) {
 			this.setState({
 				errSearch: true,
 				isShowLoadMore: false,
