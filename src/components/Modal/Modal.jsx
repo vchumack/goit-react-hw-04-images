@@ -1,52 +1,48 @@
-// import PropTypes from 'prop-types'
-import React, { Component } from 'react';
+import { useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { createPortal } from 'react-dom';
 import { OverlayDiv, ModalDiv } from './Modal.styled';
-import PropTypes from 'prop-types';
 
 const modalRoot = document.querySelector('#modal-root');
 const htmlRef = document.querySelector('html');
 
-export class Modal extends Component {
+export function Modal({ img, alt, onClose }) {
+	useEffect(() => {
+		const closeModalEsc = event => {
+			if (event.code === 'Escape' || event.code === 'Enter') {
+				onClose();
+			}
+		};
 
-	static propTypes = {
-		onClose: PropTypes.func.isRequired,
-		img: PropTypes.string.isRequired,
-		alt: PropTypes.string.isRequired,
-	};
-	componentDidMount() {
-		window.addEventListener('keydown', this.closeModalEsc);
+		// при первом монтировании компонента, аналог componentDidMount
+		window.addEventListener('keydown', closeModalEsc);
 		htmlRef.classList.add('openModal');
-	}
 
-	//чистка за собой, снимаем слушателя и класс
-	componentWillUnmount() {
-		window.removeEventListener('keydown', this.closeModalEsc);
-		htmlRef.classList.remove('openModal');
-	}
+		//чистка за собой, снимаем слушателя и класс при размонтировании, аналог componentWillUnmount
+		return () => {
+			window.removeEventListener('keydown', closeModalEsc);
+			htmlRef.classList.remove('openModal');
+		};
+	}, [onClose]);
 
-	closeModalEsc = (event) => {
-		if (event.code === 'Escape' || event.code === 'Enter') {
-			this.props.onClose();
+	const closeBackdrop = event => {
+		if (event.currentTarget === event.target) {
+			onClose();
 		}
 	};
 
-
-	closeBackdrop = (event) => {
-		if (event.currentTarget === event.target) {
-			this.props.onClose();
-		}
-	}
-	render() {
-		const { img, alt } = this.props;
-		// console.log(this.props)
-		return createPortal(
-			<OverlayDiv onClick={this.closeBackdrop}>
-				<ModalDiv >
-					<img src={img} alt={alt} />
-				</ModalDiv>
-			</OverlayDiv>,
-			modalRoot
-		);
-	}
+	return createPortal(
+		<OverlayDiv onClick={closeBackdrop}>
+			<ModalDiv>
+				<img src={img} alt={alt} />
+			</ModalDiv>
+		</OverlayDiv>,
+		modalRoot
+	);
 }
+
+Modal.propTypes = {
+	onClose: PropTypes.func.isRequired,
+	img: PropTypes.string.isRequired,
+	alt: PropTypes.string.isRequired,
+};
