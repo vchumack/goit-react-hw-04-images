@@ -51,6 +51,9 @@ export function App() {
 
 	// метод для получения значений формы из Searchbar
 	const handleSubmitForm = searchQuery => {
+		if (searchQuery === query && page === 1) {
+			return;
+		}
 		setImages([]);
 		setQuery(searchQuery);
 		setPage(1);
@@ -81,3 +84,4 @@ export function App() {
 		</Box>
 	);
 }
+
